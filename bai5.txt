@@ -1,0 +1,50 @@
+<FILENAME>my-app.conf</FILENAME>
+<CODE>
+# ==============================================================================
+# 1. CẤU HÌNH NGINX SERVER BLOCK (/etc/nginx/sites-available/my-app.conf)
+# ==============================================================================
+
+server {
+    listen 80;
+    server_name _;
+
+    # Thư mục chứa mã nguồn web tĩnh
+    root /opt/my-app/html;
+    index index.html index.htm;
+
+    # Cấu hình đường dẫn lưu trữ log riêng tại phân vùng /opt/
+    access_log /opt/my-app/logs/access.log;
+    error_log  /opt/my-app/logs/error.log;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+
+# ==============================================================================
+# 2. CÁC LỆNH THIẾT LẬP HỆ THỐNG VÀ PHÂN QUYỀN (Thực thi trên Terminal)
+# ==============================================================================
+/*
+# --- Bước 1: Tạo cấu trúc thư mục ---
+sudo mkdir -p /opt/my-app/html
+sudo mkdir -p /opt/my-app/logs
+
+# --- Bước 2: Tạo tệp tin web mẫu ---
+sudo echo "<h1>Welcome to Secure My-App</h1>" | sudo tee /opt/my-app/html/index.html
+
+# --- Bước 3: Phân quyền sở hữu đệ quy devops:www-data ---
+sudo chown -R devops:www-data /opt/my-app
+
+# --- Bước 4: Thiết lập quyền truy cập cho thư mục và tệp tin ---
+# Thư mục chính và thư mục html: 755 (devops rwx, www-data r-x, others r-x) hoặc 750
+sudo chmod 755 /opt/my-app
+sudo chmod 755 /opt/my-app/html
+
+# Tệp tin web: 644 (devops rw-, www-data r--, others r--)
+sudo chmod 644 /opt/my-app/html/index.html
+
+# Thư mục logs: 775 để group www-data có quyền ghi (rwx) log
+sudo chmod 775 /opt/my-app/logs
+
+# --- Bước 5: Kích hoạt cấu hình Nginx và khởi động lại ---
+sudo ln -s /etc/nginx/sites
